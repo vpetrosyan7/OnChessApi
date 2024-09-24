@@ -1,3 +1,8 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.OAuth;
+using Microsoft.IdentityModel.Tokens;
+using OnChessApi.Extensions;
+using OnChessApi.Models;
 using OnChessApi.Repository;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -20,6 +25,8 @@ services.AddControllers();
 services.AddEndpointsApiExplorer();
 services.AddSwaggerGen();
 
+services.AddJwtAuthentication();
+
 builder.Services.AddScoped(sp => new MySqlRepository(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Application
@@ -35,6 +42,7 @@ app.UseCors(corsPlicyName);
 
 app.UseHttpsRedirection();
 
+app.UseAuthorization();
 app.UseAuthorization();
 
 app.MapControllers();

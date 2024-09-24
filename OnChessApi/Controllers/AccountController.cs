@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 
 using OnChessApi.Models;
 using OnChessApi.Repository;
+using OnChessApi.Services;
 
 namespace OnChessApi.Controllers
 {
@@ -27,13 +28,13 @@ namespace OnChessApi.Controllers
 
                 UserModel? model = JsonConvert.DeserializeObject<UserModel>(postData);
 
-                if (model != null)
+                if (model != null && _mySqlRepository.AddUser(model))
                 {
-                    _mySqlRepository.AddUser(model);
+                    return Results.Json(new { access_token = new JwtService(model).GetToken() });
                 }
             }
 
-            return Results.Ok();
+            return Results.NoContent();
         }
     }
 }
