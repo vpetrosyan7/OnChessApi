@@ -42,19 +42,26 @@ namespace OnChessApi.Repository
 
         public bool AddUser(UserModel user)
         {
+            string password = null;
+            string passwordSalt = null;
+
+            if (string.IsNullOrEmpty(user.LoginProvider))
+            {
+                CryptService crypt = new();
+
+                string guid = Guid.NewGuid().ToString("N");
+
+                password = crypt.EncryptPassword(user.Password, guid);
+                passwordSalt = crypt.Encrypt(guid);
+            }
+
             using (MySqlConnection connection = new(_connectionString))
             {
                 try
                 {
-                    CryptService crypt = new();
-
-                    string guid = Guid.NewGuid().ToString("N");
-
-                    string password = crypt.EncryptPassword(user.Password, guid);
-
                     connection.Open();
 
-                    string sql = "INSERT INTO users (FirstName, LastName, Email, Password, PasswordSalt) VALUES (@firstName, @lastName, @email, @password, @passwordSalt)";
+                    string sql = "INSERT INTO users (FirstName, LastName, Email, Password, PasswordSalt, LoginProvider) VALUES (@firstName, @lastName, @email, @password, @passwordSalt, @loginProvider)";
 
                     using (MySqlCommand command = new(sql, connection))
                     {
@@ -62,7 +69,8 @@ namespace OnChessApi.Repository
                         command.Parameters.AddWithValue("@lastName", user.LastName);
                         command.Parameters.AddWithValue("@email", user.Email);
                         command.Parameters.AddWithValue("@password", password);
-                        command.Parameters.AddWithValue("@passwordSalt", crypt.Encrypt(guid));
+                        command.Parameters.AddWithValue("@passwordSalt", passwordSalt);
+                        command.Parameters.AddWithValue("@loginProvider", user.LoginProvider);
 
                         return command.ExecuteNonQuery() > 0;
                     }

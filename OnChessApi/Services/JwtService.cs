@@ -24,6 +24,7 @@ namespace OnChessApi.Services
         {
             List<Claim> claims = new List<Claim>
             {
+                new ("ID", _user.UserID.ToString()),
                 new ("Name", _user.FirstName),
                 new ("Email", _user.Email)
             };
