@@ -84,7 +84,45 @@ namespace OnChessApi.Repository
             return false;
         }
 
-        public bool GetUser(string email)
+        public List<UserModel> GetUsers()
+        {
+            List<UserModel> users = new();
+
+            using (MySqlConnection connection = new(_connectionString))
+            {
+                try
+                {
+                    connection.Open();
+
+                    string sql = "SELECT * FROM users";
+
+                    using (MySqlCommand command = new(sql, connection))
+                    {
+                        using (MySqlDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                users.Add(new UserModel
+                                {
+                                    UserID = Convert.ToInt32(reader["UserID"]),
+                                    FirstName = reader["FirstName"].ToString(),
+                                    LastName = reader["LastName"].ToString(),
+                                    Email = reader["Email"].ToString()
+                                });
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("An error occurred: " + ex.Message);
+                }
+            }
+
+            return users;
+        }
+
+        public bool VerifyUser(string email, string password)
         {
             using (MySqlConnection connection = new(_connectionString))
             {
@@ -102,12 +140,38 @@ namespace OnChessApi.Repository
                         {
                             while (reader.Read())
                             {
-                                string? password = reader["password"].ToString();
-                                string? passwordSalt = reader["PasswordSAlt"].ToString();
+                                string passwordHash = reader["password"].ToString();
+                                string passwordSalt = reader["PasswordSAlt"].ToString();
 
-                                new CryptService().VerifyPassword("ccc", passwordSalt, password);
+                                return new CryptService().VerifyPassword(password, passwordSalt, passwordHash);
                             }
                         }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("An error occurred: " + ex.Message);
+                }
+            }
+
+            return false;
+        }
+
+        public bool AddLog(string message)
+        {
+            using (MySqlConnection connection = new(_connectionString))
+            {
+                try
+                {
+                    connection.Open();
+
+                    string sql = "INSERT INTO logs (Message) VALUES (@message)";
+
+                    using (MySqlCommand command = new(sql, connection))
+                    {
+                        command.Parameters.AddWithValue("@message", message);
+
+                        return command.ExecuteNonQuery() > 0;
                     }
                 }
                 catch (Exception ex)

@@ -20,7 +20,7 @@ namespace OnChessApi.Controllers
         }
 
         [HttpPost]
-        public async Task<IResult> Register()
+        public async Task<IResult> RegisterAsync()
         {
             using (StreamReader reader = new(this.HttpContext.Request.Body))
             {
@@ -29,6 +29,24 @@ namespace OnChessApi.Controllers
                 UserModel? model = JsonConvert.DeserializeObject<UserModel>(postData);
 
                 if (model != null && _mySqlRepository.AddUser(model))
+                {
+                    return Results.Json(new { access_token = new JwtService(model).GetToken() });
+                }
+            }
+
+            return Results.NoContent();
+        }
+
+        [HttpPost]
+        public async Task<IResult> LoginAsync()
+        {
+            using (StreamReader reader = new(this.HttpContext.Request.Body))
+            {
+                string postData = await reader.ReadToEndAsync();
+
+                UserModel? model = JsonConvert.DeserializeObject<UserModel>(postData);
+
+                if (model != null && _mySqlRepository.VerifyUser(model.Email, model.Password))
                 {
                     return Results.Json(new { access_token = new JwtService(model).GetToken() });
                 }
